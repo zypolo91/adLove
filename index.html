@@ -4,14 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>阿尔茨海默病(AD)治疗路径可行性报告</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap"
-      rel="stylesheet"
-    />
+    <script src="assets/vendor/tailwindcss.js"></script>
+    <script src="assets/vendor/chart.umd.min.js"></script>
+    <!-- Using local/system fonts; Google Fonts removed for offline use -->
+
     <!-- Chosen Palette: Tranquil Dusk - Deep Teal, Soft Sage, Warm Cream, and a hint of Gold. -->
     <!-- Application Structure Plan: The SPA is designed as a multi-section dashboard, accessible via a top navigation bar. This structure was chosen over a linear report format to empower the user to directly access the information they need most urgently (e.g., "名医推荐" or "药物管线") without scrolling through less relevant sections. The flow is designed for targeted information retrieval: 1. Overview (现状总结) for immediate context. 2. Deep Dives (药物管线, 临床试验, 名医) for research. 3. Actionable Strategy (未来路径, 非药物干预). 4. Long-term Planning (保险与财务). This user-centric, non-linear architecture is optimal for a user dealing with a stressful, multi-faceted problem, allowing for repeated, focused visits to different sections as their needs evolve. -->
     <!-- Visualization & Content Choices: Report Info -> Goal -> Viz/Presentation Method -> Interaction -> Justification. 1. Drug Pipeline Overview -> Goal: Show landscape at a glance -> Doughnut Chart (Chart.js/Canvas) -> Hover for details -> Provides a quick, visual summary of research hotspots (Aβ, Tau, etc.) without overwhelming detail. 2. Drug/Trial/Doctor/Insurance Details -> Goal: Allow deep, comparative analysis -> Interactive HTML Tables -> Click headers to sort, dropdowns to filter -> Essential for users to compare options based on specific criteria (e.g., location, phase, cost) and find relevant information efficiently. 3. Future Paths -> Goal: Synthesize options into clear strategies -> Structured Text with Icons (HTML/Tailwind) -> Click to expand details -> Translates complex data into clear, actionable choices, aiding family decision-making. All choices prioritize clarity, interactivity, and direct data exploration, avoiding static, passive information delivery. -->
@@ -26,7 +22,10 @@
         --color-card-bg: #ffffff;
       }
       body {
-        font-family: "Noto Sans SC", sans-serif;
+        font-family: "Noto Sans SC", "Microsoft YaHei", "PingFang SC",
+          "Hiragino Sans GB", "Source Han Sans SC", "Noto Sans CJK SC",
+          "WenQuanYi Micro Hei", system-ui, -apple-system, "Segoe UI", Arial,
+          sans-serif;
         background-color: var(--color-bg);
         color: var(--color-text);
       }
