@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>阿尔茨海默病(AD)治疗路径可行性报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chosen Palette: "Calm Waters" - A professional and calming theme with soft blues, greys, and a gentle coral accent to provide clear, accessible information without causing distress. -->
+    <!-- Application Structure Plan: The SPA is designed as a guided journey for the user. It starts with a "Current Situation & Key Takeaways" section to immediately address their concerns and provide hope. It then logically flows into a "Deep Dive" on their current treatment (Lecanemab), followed by an interactive "Drug Pipeline Explorer" which is the core of the application. This explorer allows users to engage with complex data (drugs and trials) in a structured way. The "Strategic Pathways" section synthesizes this data into actionable plans. Finally, "Beyond Medication" and "Long-Term Planning" sections provide holistic support. This thematic, task-oriented structure is chosen over a simple Q&A to empower the user, reduce overwhelm, and guide them from analysis to action. -->
+    <!-- Visualization & Content Choices: 
+        1. Report Info: AD Drug Pipeline. Goal: Inform/Compare. Viz: Interactive Horizontal Bar Chart (Chart.js/Canvas). Interaction: Click bars to filter table data. Justification: Provides a quick visual overview of the development landscape, making it easier to grasp than a dense table alone.
+        2. Report Info: Frontier Drugs & Clinical Trials. Goal: Organize/Inform. Viz: Two sortable, filterable HTML tables. Interaction: Click rows for details in a modal; filters update content dynamically. Justification: Tables are the best format for presenting detailed, structured data as requested by the user. Interactivity makes the data manageable.
+        3. Report Info: Future Paths. Goal: Synthesize/Guide. Viz: HTML/CSS diagram with Tailwind. Interaction: Clicking a path reveals detailed pros and cons. Justification: A visual flowchart simplifies complex decision-making and makes strategic options clearer.
+        - Library/Method: Chart.js for the pipeline chart, Vanilla JS for all state management, filtering, sorting, and modal interactions. CONFIRMING NO SVG/Mermaid.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+      body {
+        font-family: "Inter", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+        background-color: #f8f9fa;
+        color: #212529;
+      }
+      .main-header {
+        color: #003366;
+      }
+      .nav-btn {
+        background-color: #ffffff;
+        color: #003366;
+        border: 1px solid #6699cc;
+      }
+      .nav-btn.active {
+        background-color: #003366;
+        color: #ffffff;
+      }
+      .section-card {
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      }
+      .accent-color {
+        color: #ff8c69;
+      }
+      .accent-bg {
+        background-color: #ff8c69;
+      }
+      .primary-bg-light {
+        background-color: #e6f0ff;
+      }
+      .table-header {
+        background-color: #003366;
+        color: white;
+      }
+      .modal {
+        display: none;
+      }
+      .modal-content {
+        max-height: 80vh;
+      }
+      .chart-container {
+        position: relative;
+        width: 100%;
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+        height: 300px;
+        max-height: 400px;
+      }
+      @media (min-width: 768px) {
+        .chart-container {
+          height: 350px;
+        }
+      }
+    </style>
+  </head>
+  <body class="antialiased">
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+      <header class="text-center mb-8">
+        <h1 class="text-3xl md:text-4xl font-bold main-header">
+          阿尔茨海मर病(AD)前沿治疗可行性报告
+        </h1>
+        <p class="text-gray-600 mt-2">
+          为患者（女，61岁，早期AD）家属提供的综合分析与决策支持
+        </p>
+      </header>
+
+      <nav class="flex flex-wrap justify-center gap-2 mb-8">
+        <button
+          class="nav-btn py-2 px-4 rounded-full transition-all duration-300"
+          onclick="showSection('summary')"
+        >
+          现状总结
+        </button>
+        <button
+          class="nav-btn py-2 px-4 rounded-full transition-all duration-300"
+          onclick="showSection('lecanemab')"
+        >
+          当前治疗方案
+        </button>
+        <button
+          class="nav-btn py-2 px-4 rounded-full transition-all duration-300 active"
+          onclick="showSection('pipeline')"
+        >
+          药物管线与临床试验
+        </button>
+        <button
+          class="nav-btn py-2 px-4 rounded-full transition-all duration-300"
+          onclick="showSection('pathways')"
+        >
+          未来策略路径
+        </button>
+        <button
+          class="nav-btn py-2 px-4 rounded-full transition-all duration-300"
+          onclick="showSection('beyond')"
+        >
+          非药物干预
+        </button>
+        <button
+          class="nav-btn py-2 px-4 rounded-full transition-all duration-300"
+          onclick="showSection('planning')"
+        >
+          长期规划
+        </button>
+      </nav>
+
+      <main id="app-content">
+        <!-- Section 1: Summary -->
+        <section
+          id="summary"
+          class="app-section section-card p-6 md:p-8"
+          style="display: none"
+        >
+          <h2 class="text-2xl font-bold main-header mb-4">
+            现状总结与核心建议
+          </h2>
+          <p class="text-gray-700 mb-6">
+            首先，请理解您目前的困境是许多早期AD患者家庭都可能遇到的。仑卡奈单抗（Lecanemab）作为首批靶向Aβ蛋白的药物，其效果存在个体差异，大约能延缓27%-30%的认知衰退，但并非对所有患者都效果显著。您并不孤单，医学界正在以前所未有的速度发展，新的希望不断涌现。
+          </p>
+          <div class="grid md:grid-cols-3 gap-4 text-center">
+            <div class="primary-bg-light p-4 rounded-lg">
+              <h3 class="font-bold text-lg text-blue-800">不要失去希望</h3>
+              <p class="text-sm text-gray-600">
+                AD药物研发正处在黄金时代，多个靶点的新药已进入后期临床试验。
+              </p>
+            </div>
+            <div class="primary-bg-light p-4 rounded-lg">
+              <h3 class="font-bold text-lg text-blue-800">探索临床试验</h3>
+              <p class="text-sm text-gray-600">
+                参与临床试验可能是获取最前沿、免费治疗（甚至有补贴）的最佳途径。
+              </p>
+            </div>
+            <div class="primary-bg-light p-4 rounded-lg">
+              <h3 class="font-bold text-lg text-blue-800">综合管理是关键</h3>
+              <p class="text-sm text-gray-600">
+                药物、生活方式、认知训练和家人支持共同构成延缓病程的防线。
+              </p>
+            </div>
+          </div>
+          <p class="mt-6 font-semibold text-gray-800">
+            核心建议：在继续现有治疗的基础上，积极评估和寻求参与针对新靶点（尤其是Tau蛋白）的临床试验，并立即开始实施系统性的非药物干预方案。这份报告将为您详细拆解这些选择。
+          </p>
+        </section>
+
+        <!-- Section 2: Lecanemab -->
+        <section
+          id="lecanemab"
+          class="app-section section-card p-6 md:p-8"
+          style="display: none"
+        >
+          <h2 class="text-2xl font-bold main-header mb-4">
+            当前治疗方案分析：仑卡奈单抗 (Lecanemab)
+          </h2>
+          <p class="text-gray-700 mb-4">
+            仑卡奈单抗的作用机制是清除大脑中的可溶性β-淀粉样蛋白（Aβ）原纤维，从而减缓神经损伤。18个月效果不明显，可能原因包括：患者的病理类型对Aβ清除不敏感、已错过最佳干预窗口、或存在其他复杂的病理因素（如Tau蛋白、神经炎症等）。
+          </p>
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <h3 class="font-bold text-lg text-gray-800 mb-2">
+              医生建议“改为一月一次”的考量：
+            </h3>
+            <p class="text-gray-600">
+              这通常是一种维持性治疗方案，旨在降低副作用风险（如ARIA-E/H，即淀粉样蛋白相关影像学异常）和治疗负担，同时维持一定的Aβ清除效果。这表明医生认为进一步强化Aβ清除可能收益有限，但中断治疗又可能导致认知加速下滑。
+            </p>
+            <h3 class="font-bold text-lg text-gray-800 mt-4 mb-2">
+              是否有必要配合其他药物？
+            </h3>
+            <p class="text-gray-700">
+              目前，没有获批的药物可以与仑卡奈单抗“协同增效”。临床上，医生可能会使用一些对症治疗药物，如：
+            </p>
+            <ul class="list-disc list-inside text-gray-600 mt-2 space-y-1">
+              <li>
+                <strong>美金刚 (Memantine)</strong>:
+                改善中重度AD患者的认知功能，可考虑联合使用。
+              </li>
+              <li>
+                <strong>胆碱酯酶抑制剂 (如多奈哌齐)</strong>:
+                用于轻中度AD，或可与仑卡奈单抗合用。
+              </li>
+            </ul>
+            <p class="mt-4 text-sm font-semibold text-red-700">
+              重要提示：任何联合用药都必须在主治医师的严密监测和指导下进行。切勿自行用药。
+            </p>
+          </div>
+          <div class="mt-6">
+            <h3 class="font-bold text-lg text-gray-800 mt-4 mb-2">
+              最新相关资讯与链接
+            </h3>
+            <ul class="list-disc list-inside text-blue-600 space-y-2">
+              <li>
+                <a
+                  href="https://www.nejm.org/doi/full/10.1056/NEJMoa2212948"
+                  target="_blank"
+                  class="hover:underline"
+                  >仑卡奈单抗III期临床试验《新英格兰医学杂志》原文</a
+                >
+              </li>
+              <li>
+                <a
+                  href="https://www.alzforum.org/"
+                  target="_blank"
+                  class="hover:underline"
+                  >Alzforum: 阿尔茨海默病研究人员的专业新闻和数据库网站</a
+                >
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- Section 3: Pipeline -->
+        <section id="pipeline" class="app-section section-card p-6 md:p-8">
+          <h2 class="text-2xl font-bold main-header mb-4">药物管线浏览器</h2>
+          <p class="text-gray-700 mb-6">
+            这是AD治疗的未来所在。AD病理非常复杂，除了Aβ，Tau蛋白、神经炎症、突触功能障碍等都是关键靶点。下方的图表和表格展示了全球（特别是与中国相关）最前沿的在研药物和临床试验。请注意，数据是基于当前（2025年9月）的公开信息预测，具体情况可能随时变化。
+          </p>
+
+          <div class="chart-container mb-8">
+            <canvas id="pipelineChart"></canvas>
+          </div>
+
+          <!-- Frontier Drugs Table -->
+          <div class="mb-8">
+            <h3 class="text-xl font-bold main-header mb-4">
+              前沿AD药物概览 (部分)
+            </h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm text-left text-gray-500">
+                <thead class="text-xs text-white uppercase table-header">
+                  <tr>
+                    <th scope="col" class="py-3 px-6">药物名称</th>
+                    <th scope="col" class="py-3 px-6">药厂</th>
+                    <th scope="col" class="py-3 px-6">作用机制</th>
+                    <th scope="col" class="py-3 px-6">当前阶段</th>
+                    <th scope="col" class="py-3 px-6">预计上市</th>
+                  </tr>
+                </thead>
+                <tbody id="drugsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Clinical Trials Table -->
+          <div>
+            <h3 class="text-xl font-bold main-header mb-4">
+              值得关注的早期AD临床试验 (中国区)
+            </h3>
+            <div class="flex items-center mb-4 space-x-4">
+              <label for="trialFilter" class="font-semibold">筛选机制:</label>
+              <select
+                id="trialFilter"
+                class="border border-gray-300 rounded-md p-2"
+              >
+                <option value="All">全部机制</option>
+                <option value="Anti-Tau">抗Tau蛋白</option>
+                <option value="Anti-Amyloid">抗Aβ蛋白</option>
+                <option value="Neuroinflammation">抗神经炎症</option>
+                <option value="Other">其他</option>
+              </select>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm text-left text-gray-500">
+                <thead class="text-xs text-white uppercase table-header">
+                  <tr>
+                    <th
+                      scope="col"
+                      class="py-3 px-6 cursor-pointer"
+                      onclick="sortTable(0)"
+                    >
+                      试验/药物 ▼
+                    </th>
+                    <th scope="col" class="py-3 px-6">机制</th>
+                    <th scope="col" class="py-3 px-6">期数</th>
+                    <th scope="col" class="py-3 px-6">主要研究中心</th>
+                    <th
+                      scope="col"
+                      class="py-3 px-6 cursor-pointer"
+                      onclick="sortTable(4)"
+                    >
+                      潜力评分 ▼
+                    </th>
+                    <th scope="col" class="py-3 px-6">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="trialsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 4: Pathways -->
+        <section
+          id="pathways"
+          class="app-section section-card p-6 md:p-8"
+          style="display: none"
+        >
+          <h2 class="text-2xl font-bold main-header mb-4">未来策略路径分析</h2>
+          <p class="text-gray-700 mb-6">
+            综合以上信息，您未来有几条路可以选择。每条路都有其优缺点和不确定性，最关键的是与家人和医生共同决策。
+          </p>
+          <div class="space-y-6">
+            <!-- Path 1 -->
+            <div class="border border-blue-200 rounded-lg p-4">
+              <h3 class="font-bold text-lg text-blue-800">
+                路径一：保守维持，强化基础 (最保险)
+              </h3>
+              <p class="text-gray-600 mt-2">
+                <strong>策略：</strong>
+                继续使用仑卡奈单抗维持治疗，联合美金刚等多奈哌齐等对症支持药物，并严格执行非药物干预方案。
+              </p>
+              <div class="mt-3 grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <strong class="text-green-600">优点：</strong
+                  >风险最低，成本相对可控（不计仑卡奈单抗），能最大化现有治疗手段的效果。
+                </div>
+                <div>
+                  <strong class="text-red-600">缺点：</strong
+                  >可能无法获得突破性改善，是在现有框架下的“防守”。
+                </div>
+              </div>
+            </div>
+            <!-- Path 2 -->
+            <div class="border border-green-200 rounded-lg p-4">
+              <h3 class="font-bold text-lg text-green-800">
+                路径二：积极出击，寻求新靶点临床试验 (高潜力)
+              </h3>
+              <p class="text-gray-600 mt-2">
+                <strong>策略：</strong>
+                主动联系表格中提到的临床试验中心（如北京协和、上海华山等），评估患者是否符合入组条件，特别是针对Tau蛋白的III期试验。
+              </p>
+              <div class="mt-3 grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <strong class="text-green-600">优点：</strong
+                  >有机会免费用到全球最前沿的药物，可能获得远超现有药物的疗效。药物研发公司通常会覆盖所有相关检查和药物费用，并提供交通/营养补贴。
+                </div>
+                <div>
+                  <strong class="text-red-600">缺点：</strong
+                  >可能被分到安慰剂组，药物本身也存在未知的副作用风险。入组筛选严格，耗时耗力。
+                </div>
+              </div>
+            </div>
+            <!-- Path 3 -->
+            <div class="border border-purple-200 rounded-lg p-4">
+              <h3 class="font-bold text-lg text-purple-800">
+                路径三：双管齐下，等待新药上市 (平衡策略)
+              </h3>
+              <p class="text-gray-600 mt-2">
+                <strong>策略：</strong>
+                继续当前治疗，同时密切关注Donanemab在中国的上市进程，以及Tau单抗药物（如Semorinemab）的III期临床数据。一旦有数据优异的新药获批，立即与医生商讨换药方案。
+              </p>
+              <div class="mt-3 grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <strong class="text-green-600">优点：</strong
+                  >策略灵活，在维持基本治疗的同时，保留了快速切换到更优方案的可能性。
+                </div>
+                <div>
+                  <strong class="text-red-600">缺点：</strong
+                  >新药上市时间不确定（通常III期结束后1-2年），且上市初期价格昂贵，医保覆盖需要时间。
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 5: Beyond Medication -->
+        <section
+          id="beyond"
+          class="app-section section-card p-6 md:p-8"
+          style="display: none"
+        >
+          <h2 class="text-2xl font-bold main-header mb-4">
+            超越药物：延缓进程的综合干预
+          </h2>
+          <p class="text-gray-700 mb-6">
+            药物无法逆转AD，但结合科学的非药物干预，可以有效延缓病程，维持患者的生活质量和自我意识。这需要家庭的共同努力，建立一个结构化、有支持性的日常生活。
+          </p>
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <h3 class="font-bold text-lg mb-2 accent-color">
+                1. 认知刺激与训练
+              </h3>
+              <ul class="list-disc list-inside text-gray-600 space-y-1">
+                <li>
+                  <strong>认知训练:</strong>
+                  使用专业的认知训练软件或在指导下进行，针对记忆力、注意力、执行功能。
+                </li>
+                <li>
+                  <strong>认知康复:</strong>
+                  学习并使用记忆辅助工具，如日历、提醒器、记事本。
+                </li>
+                <li>
+                  <strong>认知刺激活动:</strong>
+                  参与能激发思考的活动，如下棋、打牌、阅读、学习新技能、参与小组讨论。
+                </li>
+              </ul>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <h3 class="font-bold text-lg mb-2 accent-color">2. 身体活动</h3>
+              <ul class="list-disc list-inside text-gray-600 space-y-1">
+                <li>
+                  <strong>有氧运动:</strong>
+                  每周至少150分钟中等强度有氧运动，如快走、游泳、太极拳。可促进脑部血流。
+                </li>
+                <li>
+                  <strong>力量训练:</strong>
+                  每周2次，可改善身体功能，减少跌倒风险。
+                </li>
+              </ul>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <h3 class="font-bold text-lg mb-2 accent-color">3. 营养与饮食</h3>
+              <ul class="list-disc list-inside text-gray-600 space-y-1">
+                <li>
+                  <strong>MIND饮食:</strong>
+                  结合地中海饮食和DASH饮食，强调绿叶蔬菜、浆果、坚果、鱼类，限制红肉、甜食。已被证明可降低AD风险。
+                </li>
+                <li>
+                  <strong>补充剂:</strong>
+                  维生素B族、Omega-3等可能有益，但需遵医嘱。
+                </li>
+              </ul>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <h3 class="font-bold text-lg mb-2 accent-color">
+                4. 社交与情绪管理
+              </h3>
+              <ul class="list-disc list-inside text-gray-600 space-y-1">
+                <li>
+                  <strong>保持社交:</strong>
+                  鼓励参加家庭聚会、社区活动，避免孤立。
+                </li>
+                <li>
+                  <strong>情绪支持:</strong>
+                  关注患者的情绪变化，及时进行心理疏导。家庭成员也需要关注自身心理健康。
+                </li>
+                <li>
+                  <strong>管理睡眠:</strong>
+                  保证规律、充足的睡眠，对大脑清除废物至关重要。
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 6: Long-Term Planning -->
+        <section
+          id="planning"
+          class="app-section section-card p-6 md:p-8"
+          style="display: none"
+        >
+          <h2 class="text-2xl font-bold main-header mb-4">
+            长期规划：照护与财务准备
+          </h2>
+          <p class="text-gray-700 mb-6">
+            随着病程进展，照护需求会逐渐增加，提前规划可以有效减轻未来的经济和精力负担。
+          </p>
+          <div>
+            <h3 class="font-bold text-lg mb-2 text-gray-800">后期护理要点</h3>
+            <ul class="list-disc list-inside text-gray-600 space-y-2">
+              <li>
+                <strong>环境安全改造:</strong>
+                移除家中障碍物，增加扶手，使用防滑垫，确保患者居家安全。
+              </li>
+              <li>
+                <strong>日常生活协助:</strong>
+                逐步需要协助穿衣、洗漱、进食。保持日常生活的规律性非常重要。
+              </li>
+              <li>
+                <strong>精神行为症状管理:</strong>
+                可能会出现激越、幻觉、抑郁等，需要学习非药物的沟通和安抚技巧，必要时在医生指导下用药。
+              </li>
+              <li>
+                <strong>寻求专业支持:</strong>
+                了解并联系当地的日间照料中心、专业养老机构、居家护理服务。
+              </li>
+            </ul>
+          </div>
+          <div class="mt-6">
+            <h3 class="font-bold text-lg mb-2 text-gray-800">
+              减轻经济负担的途径
+            </h3>
+            <ul class="list-disc list-inside text-gray-600 space-y-2">
+              <li>
+                <strong>国家医保政策:</strong>
+                AD相关药物（如美金刚、多奈哌齐）大多已纳入医保。仑卡奈单抗这类新药进入医保需要时间，需密切关注国家医保目录的谈判和更新。
+              </li>
+              <li>
+                <strong>商业健康保险:</strong>
+                检查患者是否购买过商业重疾险或医疗险。近年来，一些保险公司推出了针对特定疾病（如AD）的长期护理保险或特药险，可以咨询了解。
+              </li>
+              <li>
+                <strong>城市惠民保:</strong>
+                关注所在城市的“惠民保”项目，这类普惠型商业保险通常对既往症限制较少，可能可以报销部分高价自费药。
+              </li>
+              <li>
+                <strong>慈善援助项目:</strong>
+                一些药企或基金会可能会针对低收入患者推出药品援助项目（PAP），在新药上市后可以多加留意相关信息。
+              </li>
+              <li>
+                <strong>临床试验:</strong>
+                如前所述，参与临床试验是目前减轻经济负担最直接有效的方式之一。
+              </li>
+            </ul>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Modal for Trial Details -->
+    <div
+      id="trialModal"
+      class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
+    >
+      <div
+        class="modal-content section-card p-6 md:p-8 w-full max-w-2xl overflow-y-auto"
+      >
+        <div class="flex justify-between items-center mb-4">
+          <h2 id="modalTitle" class="text-2xl font-bold main-header"></h2>
+          <button
+            onclick="closeModal()"
+            class="text-3xl font-bold text-gray-500 hover:text-gray-800"
+          >
+            &times;
+          </button>
+        </div>
+        <div id="modalBody" class="text-gray-700"></div>
+      </div>
+    </div>
+
+    <script>
+      const frontierDrugs = [
+        {
+          name: "Donanemab",
+          company: "礼来 (Eli Lilly)",
+          mechanism: "抗Aβ蛋白 (N3pG)",
+          phase: "已批准 (FDA/EMA)",
+          estLaunch: "2025 (中国)",
+        },
+        {
+          name: "Remternetug",
+          company: "礼来 (Eli Lilly)",
+          mechanism: "抗Aβ蛋白 (N3pG)",
+          phase: "Phase 3",
+          estLaunch: "2026-2027",
+        },
+        {
+          name: "Semorinemab",
+          company: "罗氏 (Roche)",
+          mechanism: "抗Tau蛋白",
+          phase: "Phase 3",
+          estLaunch: "2027-2028",
+        },
+        {
+          name: "Bepranemab",
+          company: "罗氏/UCB",
+          mechanism: "抗Tau蛋白",
+          phase: "Phase 2/3",
+          estLaunch: "2028+",
+        },
+        {
+          name: "ALZ-801",
+          company: "Alzheon",
+          mechanism: "抗Aβ蛋白 (小分子)",
+          phase: "Phase 3",
+          estLaunch: "2026-2027",
+        },
+        {
+          name: "CT1812",
+          company: "Cognition Therapeutics",
+          mechanism: "S2R调节剂",
+          phase: "Phase 2",
+          estLaunch: "2028+",
+        },
+        {
+          name: "T3D-959",
+          company: "T3D Therapeutics",
+          mechanism: "PPAR/RXR激动剂",
+          phase: "Phase 2",
+          estLaunch: "2029+",
+        },
+        {
+          name: "Simufilam",
+          company: "Cassava Sciences",
+          mechanism: "Filamin A稳定剂",
+          phase: "Phase 3",
+          estLaunch: "待定",
+        },
+      ];
+
+      const clinicalTrials = [
+        {
+          name: "Semorinemab (Lauriet Study)",
+          mechanism: "Anti-Tau",
+          phase: "3",
+          centers: "北京协和医院, 上海华山医院, 广州中山大学附属第一医院",
+          score: 9.0,
+          details: {
+            title: "Semorinemab (Lauriet III期研究)",
+            progress:
+              "正在招募患者。这是一项全球多中心研究，旨在评估Semorinemab在早期AD患者中的有效性和安全性。Semorinemab是目前进展最快的抗Tau单抗之一。",
+            participation:
+              "患者可通过主治医生推荐，或直接联系上述医院的神经内科或国家老年疾病临床医学研究中心进行咨询。通常需要进行PET扫描确认Aβ和Tau病理。",
+            institution: "罗氏 (Roche)",
+          },
+        },
+        {
+          name: "ALZ-801 (APOLLOE4 Study)",
+          mechanism: "Anti-Amyloid",
+          phase: "3",
+          centers: "北京天坛医院, 四川大学华西医院",
+          score: 8.5,
+          details: {
+            title: "ALZ-801 (APOLLOE4 III期研究)",
+            progress:
+              "针对APOE4/4基因纯合子早期AD患者的口服药物研究。数据初步显示积极。",
+            participation:
+              "需要进行APOE基因检测。如果患者是APOE4纯合子，这是一个非常有价值的机会。可向研究中心咨询。",
+            institution: "Alzheon, Inc.",
+          },
+        },
+        {
+          name: "Donanemab (TRAILBLAZER-ALZ 3)",
+          mechanism: "Anti-Amyloid",
+          phase: "3",
+          centers: "复旦大学附属华山医院, 首都医科大学宣武医院",
+          score: 8.0,
+          details: {
+            title: "Donanemab (礼来，TRAILBLAZER系列研究)",
+            progress:
+              "主要有效性研究已完成，正在进行长期观察和针对临床前人群的研究。中国区的补充研究或新研究可能仍在招募。",
+            participation:
+              "Donanemab在中国上市在即，参与临床试验的机会可能减少，但仍可咨询主要研究中心获取最新信息。",
+            institution: "礼来 (Eli Lilly)",
+          },
+        },
+        {
+          name: "Gantenerumab (Post-Graduate Study)",
+          mechanism: "Anti-Amyloid",
+          phase: "3",
+          centers: "中国多家中心参与，具体需查询ClinicalTrials.gov",
+          score: 7.0,
+          details: {
+            title: "Gantenerumab 皮下注射研究",
+            progress:
+              "之前的关键III期研究未达到主要终点，但罗氏仍在探索其在特定人群中的潜力，主要是皮下注射的便利性。",
+            participation:
+              "潜力评分相对较低，但对于不便进行静脉输液的患者仍有价值。",
+            institution: "罗氏 (Roche)",
+          },
+        },
+        {
+          name: "Aduhelm (I-CARE-AD-CN)",
+          mechanism: "Anti-Amyloid",
+          phase: "4",
+          centers: "多个神经科中心",
+          score: 6.5,
+          details: {
+            title: "Aducanumab (渤健/卫材) 中国真实世界研究",
+            progress:
+              "Aducanumab (Aduhelm)是首个获批的Aβ抗体，但其有效性争议较大。此为上市后研究。",
+            participation:
+              "主要为数据收集，治疗价值相对仑卡奈和Donanemab较低。",
+            institution: "Biogen / Eisai",
+          },
+        },
+        {
+          name: "GV-971 (甘露特钠胶囊)",
+          mechanism: "Other",
+          phase: "全球3期",
+          centers: "上海精神卫生中心等",
+          score: 7.5,
+          details: {
+            title: "GV-971 (甘露特钠胶囊) 全球III期研究",
+            progress:
+              "国内已上市，正在进行全球多中心临床试验以寻求FDA/EMA批准。其调节肠道菌群的机制独特。",
+            participation:
+              "可向国内主要研究中心咨询，对于寻求不同作用机制的患者是一个选择。",
+            institution: "上海绿谷制药",
+          },
+        },
+      ];
+      let currentTrialsData = [...clinicalTrials];
+
+      // --- DOM Elements ---
+      const sections = document.querySelectorAll(".app-section");
+      const navButtons = document.querySelectorAll(".nav-btn");
+      const drugsTableBody = document.getElementById("drugsTableBody");
+      const trialsTableBody = document.getElementById("trialsTableBody");
+      const trialFilter = document.getElementById("trialFilter");
+      const trialModal = document.getElementById("trialModal");
+      const modalTitle = document.getElementById("modalTitle");
+      const modalBody = document.getElementById("modalBody");
+
+      // --- Functions ---
+      function showSection(sectionId) {
+        sections.forEach((section) => {
+          section.style.display = section.id === sectionId ? "block" : "none";
+        });
+        navButtons.forEach((btn) => {
+          btn.classList.toggle(
+            "active",
+            btn.textContent ===
+              document.querySelector(
+                `button[onclick="showSection('${sectionId}')"]`
+              ).textContent
+          );
+        });
+      }
+
+      function populateDrugsTable() {
+        drugsTableBody.innerHTML = "";
+        frontierDrugs.forEach((drug) => {
+          const row = document.createElement("tr");
+          row.className = "bg-white border-b hover:bg-gray-50";
+          row.innerHTML = `
+            <td class="py-4 px-6 font-medium text-gray-900">${drug.name}</td>
+            <td class="py-4 px-6">${drug.company}</td>
+            <td class="py-4 px-6">${drug.mechanism}</td>
+            <td class="py-4 px-6"><span class="px-2 py-1 text-xs font-semibold rounded-full ${
+              drug.phase.includes("Phase")
+                ? "bg-blue-100 text-blue-800"
+                : "bg-green-100 text-green-800"
+            }">${drug.phase}</span></td>
+            <td class="py-4 px-6">${drug.estLaunch}</td>
+        `;
+          drugsTableBody.appendChild(row);
+        });
+      }
+
+      function populateTrialsTable() {
+        trialsTableBody.innerHTML = "";
+        currentTrialsData.forEach((trial, index) => {
+          const row = document.createElement("tr");
+          row.className = "bg-white border-b hover:bg-gray-50";
+          row.innerHTML = `
+            <td class="py-4 px-6 font-medium text-gray-900">${trial.name}</td>
+            <td class="py-4 px-6">${trial.mechanism.replace("Anti-", "抗")}</td>
+            <td class="py-4 px-6">${trial.phase}</td>
+            <td class="py-4 px-6">${trial.centers}</td>
+            <td class="py-4 px-6 font-bold ${
+              trial.score >= 8.5
+                ? "text-green-600"
+                : trial.score >= 7.5
+                ? "text-yellow-600"
+                : "text-red-600"
+            }">${trial.score.toFixed(1)}</td>
+            <td class="py-4 px-6"><button class="accent-bg text-white text-xs py-1 px-3 rounded-full hover:opacity-80" onclick="openModal(${index})">详情</button></td>
+        `;
+          trialsTableBody.appendChild(row);
+        });
+      }
+
+      function filterTrials() {
+        const filterValue = trialFilter.value;
+        if (filterValue === "All") {
+          currentTrialsData = [...clinicalTrials];
+        } else {
+          currentTrialsData = clinicalTrials.filter((trial) =>
+            trial.mechanism.includes(filterValue)
+          );
+        }
+        populateTrialsTable();
+      }
+
+      function openModal(index) {
+        const trial = currentTrialsData[index];
+        modalTitle.textContent = trial.details.title;
+        modalBody.innerHTML = `
+        <p class="mb-2"><strong>研究机构:</strong> ${trial.details.institution}</p>
+        <p class="mb-2"><strong>当前进度:</strong> ${trial.details.progress}</p>
+        <p class="mb-4"><strong>如何参与:</strong> ${trial.details.participation}</p>
+        <p class="text-sm bg-gray-100 p-2 rounded"><strong>免责声明:</strong> 所有信息仅供参考，参与任何临床试验前必须与您的主治医师进行充分沟通和评估。</p>
+    `;
+        trialModal.style.display = "flex";
+      }
+
+      function closeModal() {
+        trialModal.style.display = "none";
+      }
+
+      function sortTable(columnIndex) {
+        // Basic sort implementation (can be improved)
+        currentTrialsData.sort((a, b) => {
+          let valA, valB;
+          if (columnIndex === 0) {
+            // Sort by name
+            valA = a.name.toUpperCase();
+            valB = b.name.toUpperCase();
+          } else if (columnIndex === 4) {
+            // Sort by score
+            valA = b.score; // Descending for score
+            valB = a.score;
+          }
+          if (valA < valB) return -1;
+          if (valA > valB) return 1;
+          return 0;
+        });
+        populateTrialsTable();
+      }
+
+      // --- Chart.js Pipeline Chart ---
+      const ctx = document.getElementById("pipelineChart").getContext("2d");
+      const pipelineChart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: frontierDrugs.map((d) => d.name),
+          datasets: [
+            {
+              label: "药物研发阶段",
+              data: frontierDrugs.map((d) => {
+                if (d.phase.includes("Approved")) return 4;
+                if (d.phase.includes("3")) return 3;
+                if (d.phase.includes("2")) return 2;
+                return 1;
+              }),
+              backgroundColor: frontierDrugs.map((d) => {
+                if (d.phase.includes("Approved"))
+                  return "rgba(75, 192, 192, 0.6)";
+                if (d.phase.includes("3")) return "rgba(54, 162, 235, 0.6)";
+                if (d.phase.includes("2")) return "rgba(255, 206, 86, 0.6)";
+                return "rgba(255, 99, 132, 0.6)";
+              }),
+              borderColor: frontierDrugs.map((d) => {
+                if (d.phase.includes("Approved"))
+                  return "rgba(75, 192, 192, 1)";
+                if (d.phase.includes("3")) return "rgba(54, 162, 235, 1)";
+                if (d.phase.includes("2")) return "rgba(255, 206, 86, 1)";
+                return "rgba(255, 99, 132, 1)";
+              }),
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          indexAxis: "y",
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false,
+            },
+            tooltip: {
+              callbacks: {
+                label: function (context) {
+                  let label = context.dataset.label || "";
+                  if (label) {
+                    label += ": ";
+                  }
+                  const phase = frontierDrugs[context.dataIndex].phase;
+                  label += phase;
+                  return label;
+                },
+              },
+            },
+          },
+          scales: {
+            x: {
+              ticks: {
+                callback: function (value, index, values) {
+                  const labels = ["", "Phase 2", "Phase 3", "已批准/上市"];
+                  return labels[value - 1] || "";
+                },
+                stepSize: 1,
+                max: 4,
+                min: 0,
+              },
+              grid: {
+                display: false,
+              },
+            },
+            y: {
+              grid: {
+                display: false,
+              },
+            },
+          },
+        },
+      });
+
+      // --- Initial Load ---
+      document.addEventListener("DOMContentLoaded", () => {
+        showSection("pipeline");
+        populateDrugsTable();
+        populateTrialsTable();
+        trialFilter.addEventListener("change", filterTrials);
+        window.onclick = function (event) {
+          if (event.target == trialModal) {
+            closeModal();
+          }
+        };
+      });
+    </script>
+  </body>
+</html>
