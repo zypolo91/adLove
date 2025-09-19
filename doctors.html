@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>中国阿尔茨海默病权威专家报告</title>
+    <!-- Chosen Palette: Serene Sapphire -->
+    <!-- Application Structure Plan: The application is structured as a dashboard-style expert directory with pagination and filters. The core interface consists of a filterable list of experts presented in expandable list items. The addition of filters (by region and hospital) and pagination allows the user to browse a large dataset without overwhelming the single page. This design was chosen to address the user's need for more detailed and precise expert information. The initial view provides a clean summary for a subset of experts, while clicking an item reveals a full, detailed profile directly below, minimizing navigation and cognitive load. The search bar, filters, and pagination at the top work together to provide a highly efficient and intuitive single-page experience. -->
+    <!-- Visualization & Content Choices: The application relies on a list-based data presentation with filters and pagination. Goal: Organize and Inform. Method: Interactive List Cards with expandable detailed views, filters, and pagination controls (HTML/CSS/JS). Interaction: Users can select filters, search, and navigate through pages. A single click expands/collapses detailed content. Justification: This method is highly effective for presenting a large volume of hierarchical information (summary -> detail) and is superior to simple modals. It handles a larger dataset gracefully and allows for focused exploration. Text and simple HTML elements are used to convey all information, appropriate for the biographical data presented. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap");
+      body {
+        font-family: "Noto Sans SC", sans-serif;
+        background-color: #eef2f5;
+        color: #1e293b;
+      }
+      .container {
+        max-width: 1200px;
+      }
+      .expert-card {
+        background-color: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease;
+        cursor: pointer;
+        border: 1px solid #e2e8f0;
+      }
+      .expert-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      }
+      .expert-details {
+        display: none;
+        overflow: hidden;
+        transition: max-height 0.4s ease-out;
+        max-height: 0;
+        opacity: 0;
+        padding-top: 1rem;
+      }
+      .expert-details.expanded {
+        display: block;
+        max-height: 1000px;
+        opacity: 1;
+      }
+      .expand-icon {
+        transition: transform 0.3s ease;
+      }
+      .expand-icon.expanded {
+        transform: rotate(180deg);
+      }
+      .search-input::placeholder,
+      .filter-select {
+        color: #94a3b8;
+      }
+      .pagination-btn {
+        background-color: #cbd5e1;
+        color: #475569;
+        padding: 8px 16px;
+        border-radius: 9999px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+      .pagination-btn:hover:not(.disabled) {
+        background-color: #94a3b8;
+        color: #fff;
+      }
+      .pagination-btn.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .pagination-btn.active {
+        background-color: #3b82f6;
+        color: white;
+      }
+    </style>
+  </head>
+  <body class="p-4 md:p-8">
+    <div class="container mx-auto">
+      <header class="text-center mb-10">
+        <h1 class="text-3xl md:text-4xl font-bold text-blue-800">
+          中国阿尔茨海默病权威专家报告
+        </h1>
+        <p class="text-sm md:text-md text-slate-600 mt-2">
+          基于权威公开资料，为您提供详尽的阿尔茨海默病专家信息。
+        </p>
+      </header>
+
+      <section class="mb-8">
+        <div
+          class="flex flex-col md:flex-row items-center justify-between bg-white rounded-lg p-4 shadow-sm space-y-4 md:space-y-0 md:space-x-4"
+        >
+          <input
+            type="text"
+            id="expert-search"
+            class="search-input w-full md:w-1/2 p-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="按姓名、医院或专长搜索..."
+          />
+          <select
+            id="region-filter"
+            class="filter-select w-full md:w-1/4 p-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">筛选地区</option>
+          </select>
+          <select
+            id="hospital-filter"
+            class="filter-select w-full md:w-1/4 p-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">筛选医院</option>
+          </select>
+        </div>
+      </section>
+
+      <main id="experts-list" class="space-y-6">
+        <!-- Expert cards will be dynamically inserted here -->
+      </main>
+
+      <div
+        id="pagination-container"
+        class="mt-10 flex justify-center items-center space-x-3"
+      >
+        <button id="prev-btn" class="pagination-btn disabled">上一页</button>
+        <div id="page-numbers" class="flex space-x-2"></div>
+        <button id="next-btn" class="pagination-btn">下一页</button>
+      </div>
+    </div>
+
+    <script>
+      const expertsData = [
+        {
+          name: "贾建平",
+          title: "教授，主任医师",
+          hospital: "首都医科大学宣武医院",
+          department: "神经内科",
+          region: "北京",
+          specialties: "痴呆与认知障碍的诊断与治疗, 痴呆生物标志物, 遗传咨询",
+          bio: "贾建平教授是中国神经病学和认知障碍领域的领军人物。他创立了北京老年痴呆防治协会并担任会长，致力于推动中国痴呆防治事业的发展。贾教授及其团队在阿尔茨海默病的早期诊断、生物标志物和遗传机制研究方面做出了突出贡献，主导了多部中国痴呆诊疗指南的制定，在国内外享有盛誉。",
+        },
+        {
+          name: "王华丽",
+          title: "教授，主任医师",
+          hospital: "北京大学第六医院",
+          department: "老年精神科",
+          region: "北京",
+          specialties: "老年痴呆综合管理, 非药物干预, 照护者支持",
+          bio: "王华丽教授是中国老年精神医学领域的知名专家。她不仅精通阿尔茨海默病的药物治疗，更倡导并实践非药物干预措施，如认知训练和心理社会干预，以改善患者生活质量并减轻家属负担。她在痴呆照护者支持和教育方面有着深入研究，是该领域的杰出代表。",
+        },
+        {
+          name: "唐启盛",
+          title: "教授，主任医师",
+          hospital: "上海交通大学医学院附属瑞金医院",
+          department: "神经内科",
+          region: "上海",
+          specialties: "神经退行性疾病, 帕金森病, 阿尔茨海默病",
+          bio: "唐启盛教授是华东地区神经退行性疾病领域的权威专家，在阿尔茨海默病、帕金森病等复杂神经系统疾病的诊治上拥有丰富的临床经验。他注重临床与科研的结合，为推动该地区的神经病学发展做出了重要贡献。",
+        },
+        {
+          name: "郁金泰",
+          title: "教授，主任医师",
+          hospital: "复旦大学附属华山医院",
+          department: "神经内科",
+          region: "上海",
+          specialties: "痴呆发病机制, 危险因素研究, 临床试验",
+          bio: "郁金泰教授是阿尔茨海默病基础与临床研究的杰出学者。他的研究主要集中在痴呆的分子发病机制、危险因素以及早期预警生物标志物。郁教授在国际顶级期刊上发表了多篇高影响力论文，其研究成果为阿茨海默病的预防和新药研发提供了重要的科学依据。",
+        },
+        {
+          name: "肖世富",
+          title: "教授，主任医师",
+          hospital: "上海市精神卫生中心",
+          department: "老年精神科",
+          region: "上海",
+          specialties: "阿尔茨海默病精神行为症状(BPSD), 老年期精神障碍",
+          bio: "肖世富教授是国内痴呆伴发精神行为症状（BPSD）研究领域的权威。他专注于阿尔茨海默病患者出现的抑郁、焦虑、幻觉等非认知症状的诊断与管理，通过药物和非药物手段相结合，显著提高了患者的生活质量和家庭照护水平。",
+        },
+        {
+          name: "张振馨",
+          title: "教授，主任医师",
+          hospital: "中山大学附属第一医院",
+          department: "神经内科",
+          region: "广州",
+          specialties: "神经退行性疾病, 痴呆流行病学, 遗传学",
+          bio: "张振馨教授是华南地区神经退行性疾病领域的奠基人之一。她在阿尔茨海默病的临床诊治、流行病学和遗传学研究方面耕耘数十年，培养了大量专业人才，极大地推动了华南地区神经病学的发展。",
+        },
+        {
+          name: "王小利",
+          title: "教授，主任医师",
+          hospital: "浙江大学医学院附属第二医院",
+          department: "神经内科",
+          region: "杭州",
+          specialties: "认知障碍早期诊断, 脑影像学, 临床神经心理学",
+          bio: "王小利教授在认知障碍的早期诊断和鉴别诊断方面具有深厚造诣。他擅长运用先进的脑影像技术和神经心理学评估方法，为痴呆患者提供精准的诊断和个性化的治疗建议。",
+        },
+        {
+          name: "陈忠",
+          title: "教授，主任医师",
+          hospital: "四川大学华西医院",
+          department: "神经内科",
+          region: "成都",
+          specialties: "神经退行性疾病, 罕见痴呆, 遗传咨询",
+          bio: "陈忠教授是华西医院神经内科的知名专家，尤其在疑难和罕见神经退行性疾病的诊断方面享有盛誉。他擅长结合临床症状和基因检测，为复杂痴呆患者提供准确的诊断和治疗方案。",
+        },
+        {
+          name: "周玉颖",
+          title: "教授，主任医师",
+          hospital: "浙江大学医学院附属第一医院",
+          department: "神经内科",
+          region: "杭州",
+          specialties: "痴呆临床研究, 转化医学, 生物标志物",
+          bio: "周玉颖教授是浙江省认知障碍领域的学术带头人。她积极参与和组织国内外多中心新药临床试验，致力于将基础研究的最新成果快速转化为临床应用，为患者带来新的治疗希望。",
+        },
+        {
+          name: "高山",
+          title: "教授，主任医师",
+          hospital: "重庆医科大学附属第一医院",
+          department: "神经内科",
+          region: "重庆",
+          specialties: "痴呆与帕金森病, 神经功能调控, 综合治疗",
+          bio: "高山教授是重庆地区阿尔茨海默病诊疗领域的领军人物。他注重多学科协作，擅长为患者提供包括药物、康复和神经调控在内的全面综合治疗方案。",
+        },
+        {
+          name: "王建平",
+          title: "教授，主任医师",
+          hospital: "中南大学湘雅二医院",
+          department: "神经内科",
+          region: "长沙",
+          specialties: "痴呆早期诊断, 认知康复, 神经病理学",
+          bio: "王建平教授是中南地区知名的神经内科专家，尤其在阿尔茨海默病的早期筛查和认知康复方面有独到见解。他致力于推广规范化诊疗流程，对提高基层医疗机构的诊疗水平做出了贡献。",
+        },
+        {
+          name: "杨铭",
+          title: "教授，主任医师",
+          hospital: "北京协和医院",
+          department: "神经内科",
+          region: "北京",
+          specialties: "神经退行性疾病, 自身免疫性脑炎, 疑难病诊断",
+          bio: "杨铭教授作为协和医院的专家，在处理各类疑难复杂神经退行性疾病方面拥有极高的声誉。他对罕见痴呆和伴随自身免疫疾病的认知障碍有深入研究，是许多复杂病例的首选会诊医生。",
+        },
+        {
+          name: "朱卫国",
+          title: "教授，主任医师",
+          hospital: "华中科技大学同济医学院附属同济医院",
+          department: "神经内科",
+          region: "武汉",
+          specialties: "痴呆生物标志物, 痴呆遗传学, 临床试验",
+          bio: "朱卫国教授在阿尔茨海默病的遗传学和生物标志物研究领域是国内的权威。他的团队专注于寻找新的分子标志物，以期实现更早期、更精准的诊断，并为新药研发提供靶点依据。",
+        },
+        {
+          name: "李新",
+          title: "教授，主任医师",
+          hospital: "北京大学第一医院",
+          department: "神经内科",
+          region: "北京",
+          specialties: "痴呆诊断与鉴别, 认知康复, 神经病理学",
+          bio: "李新教授是北京大学第一医院神经内科的资深专家，在认知障碍和痴呆的诊断与鉴别诊断方面经验丰富。他擅长通过全面的神经心理学评估，为患者制定个性化的治疗方案。",
+        },
+        {
+          name: "董强",
+          title: "教授，主任医师",
+          hospital: "复旦大学附属华山医院",
+          department: "神经内科",
+          region: "上海",
+          specialties: "神经退行性疾病, 脑血管病, 临床管理",
+          bio: "董强教授是复旦大学附属华山医院神经内科的学术带头人之一，不仅临床经验丰富，同时在推动学科建设和多中心临床研究方面扮演重要角色。他致力于神经退行性疾病的规范化诊疗流程，为患者提供高质量的医疗服务。",
+        },
+      ];
+
+      const expertsList = document.getElementById("experts-list");
+      const expertSearchInput = document.getElementById("expert-search");
+      const regionFilter = document.getElementById("region-filter");
+      const hospitalFilter = document.getElementById("hospital-filter");
+      const prevBtn = document.getElementById("prev-btn");
+      const nextBtn = document.getElementById("next-btn");
+      const pageNumbersContainer = document.getElementById("page-numbers");
+
+      const itemsPerPage = 5;
+      let currentPage = 1;
+      let filteredExperts = [];
+      let activeExpertId = null;
+
+      const renderExperts = (experts) => {
+        expertsList.innerHTML = "";
+        const start = (currentPage - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        const paginatedExperts = experts.slice(start, end);
+
+        if (paginatedExperts.length === 0) {
+          expertsList.innerHTML =
+            '<p class="text-center text-slate-500 mt-8">没有找到符合条件的专家。</p>';
+          document.getElementById("pagination-container").style.display =
+            "none";
+          return;
+        }
+
+        document.getElementById("pagination-container").style.display = "flex";
+        paginatedExperts.forEach((expert, index) => {
+          const card = document.createElement("div");
+          card.className = "expert-card p-5";
+          card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center text-xl font-bold text-slate-500">
+                                ${expert.name.charAt(0)}
+                            </div>
+                            <div>
+                                <h3 class="text-xl md:text-2xl font-bold text-blue-800">${
+                                  expert.name
+                                }</h3>
+                                <p class="text-md text-slate-600 mt-1">${
+                                  expert.title
+                                } | ${expert.hospital}</p>
+                        </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-slate-500 text-sm md:text-md">${
+                              expert.region
+                            }</span>
+                            <span class="expand-icon text-2xl text-slate-400 font-bold">&#x25BC;</span>
+                        </div>
+                    </div>
+                    <div class="expert-details" data-id="${expert.name}">
+                        <div class="bg-slate-50 p-6 rounded-lg mt-4 text-sm md:text-base">
+                            <p class="mb-2"><strong class="font-semibold">所属部门：</strong>${
+                              expert.department
+                            }</p>
+                            <p class="mb-2"><strong class="font-semibold">专长领域：</strong>${
+                              expert.specialties
+                            }</p>
+                            <p class="text-slate-700 leading-relaxed"><strong class="font-semibold">简介：</strong>${
+                              expert.bio
+                            }</p>
+                        </div>
+                    </div>
+                `;
+          expertsList.appendChild(card);
+        });
+
+        document.querySelectorAll(".expert-card").forEach((card) => {
+          card.addEventListener("click", () => {
+            const details = card.querySelector(".expert-details");
+            const icon = card.querySelector(".expand-icon");
+            const currentId = details.getAttribute("data-id");
+
+            if (
+              details.classList.contains("expanded") &&
+              activeExpertId === currentId
+            ) {
+              details.classList.remove("expanded");
+              icon.classList.remove("expanded");
+              activeExpertId = null;
+            } else {
+              document
+                .querySelectorAll(".expert-details.expanded")
+                .forEach((item) => {
+                  item.classList.remove("expanded");
+                  item.parentElement
+                    .querySelector(".expand-icon")
+                    .classList.remove("expanded");
+                });
+              details.classList.add("expanded");
+              icon.classList.add("expanded");
+              activeExpertId = currentId;
+            }
+          });
+        });
+
+        updatePaginationControls(experts.length);
+      };
+
+      const updatePaginationControls = (totalItems) => {
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        prevBtn.classList.toggle("disabled", currentPage === 1);
+        nextBtn.classList.toggle(
+          "disabled",
+          currentPage === totalPages || totalPages === 0
+        );
+        pageNumbersContainer.innerHTML = "";
+        for (let i = 1; i <= totalPages; i++) {
+          const pageBtn = document.createElement("button");
+          pageBtn.textContent = i;
+          pageBtn.className = `pagination-btn ${
+            i === currentPage ? "active" : ""
+          }`;
+          pageBtn.addEventListener("click", () => {
+            currentPage = i;
+            renderExperts(filteredExperts);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          });
+          pageNumbersContainer.appendChild(pageBtn);
+        }
+      };
+
+      const applyFilters = () => {
+        const searchTerm = expertSearchInput.value.toLowerCase();
+        const selectedRegion = regionFilter.value;
+        const selectedHospital = hospitalFilter.value;
+
+        filteredExperts = expertsData.filter(
+          (expert) =>
+            (expert.name.toLowerCase().includes(searchTerm) ||
+              expert.hospital.toLowerCase().includes(searchTerm) ||
+              expert.specialties.toLowerCase().includes(searchTerm)) &&
+            (selectedRegion === "" || expert.region === selectedRegion) &&
+            (selectedHospital === "" || expert.hospital === selectedHospital)
+        );
+
+        currentPage = 1;
+        renderExperts(filteredExperts);
+      };
+
+      const populateFilters = () => {
+        const regions = [
+          ...new Set(expertsData.map((expert) => expert.region)),
+        ].sort();
+        regions.forEach((region) => {
+          const option = document.createElement("option");
+          option.value = region;
+          option.textContent = region;
+          regionFilter.appendChild(option);
+        });
+
+        const hospitals = [
+          ...new Set(expertsData.map((expert) => expert.hospital)),
+        ].sort();
+        hospitals.forEach((hospital) => {
+          const option = document.createElement("option");
+          option.value = hospital;
+          option.textContent = hospital;
+          hospitalFilter.appendChild(option);
+        });
+      };
+
+      prevBtn.addEventListener("click", () => {
+        if (currentPage > 1) {
+          currentPage--;
+          renderExperts(filteredExperts);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+      });
+
+      nextBtn.addEventListener("click", () => {
+        const totalPages = Math.ceil(filteredExperts.length / itemsPerPage);
+        if (currentPage < totalPages) {
+          currentPage++;
+          renderExperts(filteredExperts);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+      });
+
+      expertSearchInput.addEventListener("keyup", applyFilters);
+      regionFilter.addEventListener("change", applyFilters);
+      hospitalFilter.addEventListener("change", applyFilters);
+
+      document.addEventListener("DOMContentLoaded", () => {
+        populateFilters();
+        filteredExperts = expertsData;
+        renderExperts(filteredExperts);
+      });
+    </script>
+  </body>
+</html>

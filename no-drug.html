@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>早期阿尔茨海默病非药物干预全攻略</title>
+    <!-- Chosen Palette: Modern Blue-Green & Subtle Gray -->
+    <!-- Application Structure Plan: The application uses a single-page dashboard layout. A central, dynamic radar chart visually summarizes the intervention pillars. Below it, a set of interactive cards, representing the five intervention categories, allows users to explore detailed content on demand. This structure was chosen to provide a high-level overview first (via the chart) and then allow for deep-dives into specific topics without cluttering the interface. It supports both quick-glance information consumption and detailed exploration. -->
+    <!-- Visualization & Content Choices: A dynamic radar chart is used to visualize the relative importance of the five intervention pillars. Goal: Synthesize and Compare. Method: Chart.js radar chart, dynamically updated with JS. Interaction: Buttons below the chart change the active dataset, highlighting different intervention strategies. Justification: The radar chart is an excellent way to visually compare multi-dimensional data, making the abstract concept of a balanced intervention plan concrete. Interactive cards with show/hide functionality are used for detailed text to keep the main view clean. This combination effectively translates complex information into an engaging, explorable format. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Noto Sans SC", sans-serif;
+        background-color: #f0f4f8;
+      }
+      .card-container {
+        transition: all 0.3s ease;
+      }
+      .card-header {
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+      .card-header:hover {
+        background-color: #e2e8f0;
+      }
+      .card-content {
+        display: none;
+        padding: 1rem;
+        animation: fadeIn 0.5s ease-in-out;
+      }
+      .card-content.active {
+        display: block;
+      }
+      .chevron {
+        transition: transform 0.3s ease;
+      }
+      .chevron.rotated {
+        transform: rotate(180deg);
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .chart-container {
+        position: relative;
+        width: 100%;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+        height: 300px;
+        max-height: 400px;
+      }
+      @media (min-width: 768px) {
+        .chart-container {
+          height: 350px;
+        }
+      }
+    </style>
+  </head>
+  <body class="text-gray-800">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-6xl">
+      <header class="text-center mb-10">
+        <h1 class="text-3xl md:text-4xl font-bold text-slate-800">
+          大脑健康生活处方笺
+        </h1>
+        <p class="text-md md:text-lg text-gray-600 mt-3 max-w-3xl mx-auto">
+          一份针对早期阿尔茨海默病的非药物干预全攻略，助您主动出击，延缓病程发展。
+        </p>
+      </header>
+
+      <section class="mb-12 bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-2xl font-bold text-center text-teal-700 mb-4">
+          综合干预策略
+        </h2>
+        <div class="chart-container">
+          <canvas id="myChart"></canvas>
+        </div>
+        <div class="flex flex-wrap justify-center gap-3 mt-6">
+          <button
+            class="bg-teal-500 text-white font-semibold py-2 px-4 rounded-full shadow-md hover:bg-teal-600 transition-colors"
+            onclick="updateChart(0)"
+          >
+            综合
+          </button>
+          <button
+            class="bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-full shadow-md hover:bg-gray-400 transition-colors"
+            onclick="updateChart(1)"
+          >
+            认知
+          </button>
+          <button
+            class="bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-full shadow-md hover:bg-gray-400 transition-colors"
+            onclick="updateChart(2)"
+          >
+            身体
+          </button>
+          <button
+            class="bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-full shadow-md hover:bg-gray-400 transition-colors"
+            onclick="updateChart(3)"
+          >
+            社交
+          </button>
+          <button
+            class="bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-full shadow-md hover:bg-gray-400 transition-colors"
+            onclick="updateChart(4)"
+          >
+            饮食
+          </button>
+          <button
+            class="bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-full shadow-md hover:bg-gray-400 transition-colors"
+            onclick="updateChart(5)"
+          >
+            身心
+          </button>
+        </div>
+      </section>
+
+      <main class="space-y-6">
+        <div
+          class="card-container bg-white rounded-lg shadow-md overflow-hidden"
+        >
+          <div
+            class="card-header p-5 flex justify-between items-center bg-gray-50"
+          >
+            <h2
+              class="text-lg font-bold text-slate-700 flex items-center gap-2"
+            >
+              🧠 认知活动
+            </h2>
+            <span class="chevron text-gray-500 text-2xl">▼</span>
+          </div>
+          <div class="card-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 class="font-semibold text-lg text-teal-600 mb-2">
+                  为何有效？
+                </h3>
+                <p class="text-gray-700">
+                  认知活动就像是大脑的重量训练。通过学习新事物、挑战复杂任务，可以刺激神经细胞之间建立新的联结，增强“认知储备”。当部分大脑区域因病变受损时，这份储备能让大脑绕道而行，维持正常功能。这就是“用进废退”的最佳体现。
+                </p>
+              </div>
+              <div>
+                <h3 class="font-semibold text-lg text-teal-600 mb-2">
+                  可以怎么做？
+                </h3>
+                <ul class="list-disc list-inside space-y-2 text-gray-700">
+                  <li>
+                    <strong>学习新技能：</strong>
+                    尝试一直想学的东西，如乐器、外语、摄影或绘画。重点是“新”，而非重复已熟练的技能。
+                  </li>
+                  <li>
+                    <strong>挑战智力游戏：</strong>
+                    数独、填字游戏、桥牌、麻将或策略型桌游都是很好的选择。
+                  </li>
+                  <li>
+                    <strong>深度阅读与讨论：</strong>
+                    阅读需要思考的书籍或文章，并与他人讨论观点。
+                  </li>
+                  <li>
+                    <strong>规划复杂任务：</strong>
+                    尝试规划一次家庭旅游、研究一个新的投资理财方案，或自己动手组装家具。
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="card-container bg-white rounded-lg shadow-md overflow-hidden"
+        >
+          <div
+            class="card-header p-5 flex justify-between items-center bg-gray-50"
+          >
+            <h2
+              class="text-lg font-bold text-slate-700 flex items-center gap-2"
+            >
+              🏃 身体活动
+            </h2>
+            <span class="chevron text-gray-500 text-2xl">▼</span>
+          </div>
+          <div class="card-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 class="font-semibold text-lg text-teal-600 mb-2">
+                  为何有效？
+                </h3>
+                <p class="text-gray-700">
+                  运动是目前被科学证据最强力支持的护脑活动。规律运动能增加大脑的血流量，促进神经营养因子（BDNF）的分泌，这种物质被誉为“大脑的肥料”，能刺激新神经元生长。此外，运动还能抗炎症、改善胰岛素抵抗，这些都与阿尔茨海默病的病理机制密切相关。
+                </p>
+              </div>
+              <div>
+                <h3 class="font-semibold text-lg text-teal-600 mb-2">
+                  可以怎么做？
+                </h3>
+                <ul class="list-disc list-inside space-y-2 text-gray-700">
+                  <li>
+                    <strong>有氧运动为核心：</strong>
+                    每周至少150分钟的中等强度有氧运动，如快走、慢跑、游泳、骑自行车。
+                  </li>
+                  <li>
+                    <strong>加入肌力训练：</strong>
+                    每周2次，针对主要肌群的抗阻力训练，如举哑铃、弹力带或深蹲。
+                  </li>
+                  <li>
+                    <strong>平衡与协调：</strong>
+                    太极拳、瑜伽或舞蹈，有助于预防跌倒，同时也锻炼大脑的多工处理能力。
+                  </li>
+                  <li>
+                    <strong>融入日常生活：</strong>
+                    能走楼梯就不搭电梯，提前一站下车走路回家，将活动融入每日行程中。
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="card-container bg-white rounded-lg shadow-md overflow-hidden"
+        >
+          <div
+            class="card-header p-5 flex justify-between items-center bg-gray-50"
+          >
+            <h2
+              class="text-lg font-bold text-slate-700 flex items-center gap-2"
+            >
+              ☕ 社交互动
+            </h2>
+            <span class="chevron text-gray-500 text-2xl">▼</span>
+          </div>
+          <div class="card-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 class="font-semibold text-lg text-teal-600 mb-2">
+                  为何有效？
+                </h3>
+                <p class="text-gray-700">
+                  社交是高度复杂的认知活动。与人互动需要用到记忆力（记住名字和事情）、注意力、语言能力和执行功能（规划对话内容）。活跃的社交生活能有效对抗抑郁和孤独感，而这两者都是失智症的危险因子。人际网络就像一个支持系统，为大脑提供持续的正面刺激。
+                </p>
+              </div>
+              <div>
+                <h3 class="font-semibold text-lg text-teal-600 mb-2">
+                  可以怎么做？
+                </h3>
+                <ul class="list-disc list-inside space-y-2 text-gray-700">
+                  <li>
+                    <strong>参加团体活动：</strong>
+                    加入社区大学、读书会、合唱团、志愿者团体等。
+                  </li>
+                  <li>
+                    <strong>与亲友定期聚会：</strong>
+                    安排固定的家庭日或朋友聚餐，保持紧密联系。
+                  </li>
+                  <li>
+                    <strong>尝试新的社交场景：</strong>
+                    参观博物馆、听音乐会、参加讲座，增加与不同人交流的机会。
+                  </li>
+                  <li>
+                    <strong>善用科技：</strong>
+                    通过视频电话与远方的亲友保持联系。
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="card-container bg-white rounded-lg shadow-md overflow-hidden"
+        >
+          <div
+            class="card-header p-5 flex justify-between items-center bg-gray-50"
+          >
+            <h2
+              class="text-lg font-bold text-slate-700 flex items-center gap-2"
+            >
+              🥗 健康饮食
+            </h2>
+            <span class="chevron text-gray-500 text-2xl">▼</span>
+          </div>
+          <div class="card-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 class="font-semibold text-lg text-teal-600 mb-2">
+                  为何有效？
+                </h3>
+                <p class="text-gray-700">
+                  大脑是一个高耗能器官，其健康与我们吃进的食物息息相关。“地中海饮食”或其改良版“MIND饮食”被大量研究证实能降低失智风险。这类饮食富含抗氧化物和抗炎症成分，能保护脑细胞免受氧化压力损害；同时，健康的脂肪（如Omega-3）是构成神经细胞膜的重要原料。
+                </p>
+              </div>
+              <div>
+                <h3 class="font-semibold text-lg text-teal-600 mb-2">
+                  可以怎么做？
+                </h3>
+                <ul class="list-disc list-inside space-y-2 text-gray-700">
+                  <li>
+                    <strong>多吃植物性食物：</strong>
+                    以蔬菜（特别是绿叶蔬菜）、水果、豆类、坚果和全谷类为主。
+                  </li>
+                  <li>
+                    <strong>选择健康脂肪：</strong>
+                    使用橄榄油作为主要烹饪用油，多吃鱼类（特别是三文鱼、鲭鱼等富含Omega-3的鱼）。
+                  </li>
+                  <li>
+                    <strong>减少红肉与加工食品：</strong>
+                    每周红肉摄取不超过1-2次。
+                  </li>
+                  <li>
+                    <strong>限制甜食与精致淀粉：</strong>
+                    避免含糖饮料、糕点和白面包等。
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="card-container bg-white rounded-lg shadow-md overflow-hidden"
+        >
+          <div
+            class="card-header p-5 flex justify-between items-center bg-gray-50"
+          >
+            <h2
+              class="text-lg font-bold text-slate-700 flex items-center gap-2"
+            >
+              🌙 身心健康
+            </h2>
+            <span class="chevron text-gray-500 text-2xl">▼</span>
+          </div>
+          <div class="card-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 class="font-semibold text-lg text-teal-600 mb-2">
+                  为何有效？
+                </h3>
+                <p class="text-gray-700">
+                  睡眠是大脑的“清道夫时间”。在深度睡眠期间，大脑的胶状淋巴系统（glymphatic
+                  system）会活跃起来，清除白天产生的代谢废物，其中就包括β-淀粉样蛋白。长期的睡眠不足或质量不佳会阻碍这个清理过程。同时，慢性压力会导致皮质醇水平升高，长期下来会损害海马回——大脑的记忆中心。
+                </p>
+              </div>
+              <div>
+                <h3 class="font-semibold text-lg text-teal-600 mb-2">
+                  可以怎么做？
+                </h3>
+                <ul class="list-disc list-inside space-y-2 text-gray-700">
+                  <li>
+                    <strong>建立规律睡眠：</strong>
+                    每天固定时间上床睡觉和起床，即使是周末。
+                  </li>
+                  <li>
+                    <strong>优化睡眠环境：</strong>
+                    确保卧室黑暗、安静、凉爽。睡前一小时远离手机、电视等蓝光屏幕。
+                  </li>
+                  <li>
+                    <strong>学习压力管理：</strong>
+                    尝试冥想、正念、深呼吸练习或温和的伸展运动来放松身心。
+                  </li>
+                  <li>
+                    <strong>处理情绪困扰：</strong>
+                    如果有持续的焦虑或抑郁情绪，应寻求专业心理咨询或医疗协助。
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const ctx = document.getElementById("myChart");
+      let myChart;
+
+      const data = {
+        labels: ["认知活动", "身体活动", "社交互动", "健康饮食", "身心健康"],
+        datasets: [
+          {
+            label: "综合干预重要性",
+            data: [5, 5, 5, 5, 5],
+            fill: true,
+            backgroundColor: "rgba(52, 211, 153, 0.4)",
+            borderColor: "rgb(16, 185, 129)",
+            pointBackgroundColor: "rgb(16, 185, 129)",
+            pointBorderColor: "#fff",
+            pointHoverBackgroundColor: "#fff",
+            pointHoverBorderColor: "rgb(16, 185, 129)",
+          },
+          {
+            label: "认知干预重要性",
+            data: [5, 2, 3, 2, 3],
+            fill: true,
+            backgroundColor: "rgba(59, 130, 246, 0.4)",
+            borderColor: "rgb(37, 99, 235)",
+            pointBackgroundColor: "rgb(37, 99, 235)",
+            pointBorderColor: "#fff",
+            pointHoverBackgroundColor: "#fff",
+            pointHoverBorderColor: "rgb(37, 99, 235)",
+          },
+          {
+            label: "身体干预重要性",
+            data: [2, 5, 2, 3, 3],
+            fill: true,
+            backgroundColor: "rgba(239, 68, 68, 0.4)",
+            borderColor: "rgb(220, 38, 38)",
+            pointBackgroundColor: "rgb(220, 38, 38)",
+            pointBorderColor: "#fff",
+            pointHoverBackgroundColor: "#fff",
+            pointHoverBorderColor: "rgb(220, 38, 38)",
+          },
+          {
+            label: "社交干预重要性",
+            data: [3, 2, 5, 2, 4],
+            fill: true,
+            backgroundColor: "rgba(251, 191, 36, 0.4)",
+            borderColor: "rgb(217, 119, 6)",
+            pointBackgroundColor: "rgb(217, 119, 6)",
+            pointBorderColor: "#fff",
+            pointHoverBackgroundColor: "#fff",
+            pointHoverBorderColor: "rgb(217, 119, 6)",
+          },
+          {
+            label: "饮食干预重要性",
+            data: [2, 3, 2, 5, 2],
+            fill: true,
+            backgroundColor: "rgba(129, 140, 248, 0.4)",
+            borderColor: "rgb(99, 102, 241)",
+            pointBackgroundColor: "rgb(99, 102, 241)",
+            pointBorderColor: "#fff",
+            pointHoverBackgroundColor: "#fff",
+            pointHoverBorderColor: "rgb(99, 102, 241)",
+          },
+          {
+            label: "身心干预重要性",
+            data: [3, 3, 4, 2, 5],
+            fill: true,
+            backgroundColor: "rgba(168, 85, 247, 0.4)",
+            borderColor: "rgb(124, 58, 237)",
+            pointBackgroundColor: "rgb(124, 58, 237)",
+            pointBorderColor: "#fff",
+            pointHoverBackgroundColor: "#fff",
+            pointHoverBorderColor: "rgb(124, 58, 237)",
+          },
+        ],
+      };
+
+      const config = {
+        type: "radar",
+        data: data,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false,
+            },
+          },
+          scales: {
+            r: {
+              angleLines: {
+                color: "rgba(209, 213, 219, 0.6)",
+              },
+              grid: {
+                color: "rgba(209, 213, 219, 0.6)",
+              },
+              pointLabels: {
+                color: "#4b5563",
+                font: {
+                  size: 14,
+                },
+              },
+              suggestedMin: 0,
+              suggestedMax: 5,
+              ticks: {
+                display: false,
+              },
+            },
+          },
+        },
+      };
+
+      const cardHeaders = document.querySelectorAll(".card-header");
+      cardHeaders.forEach((header) => {
+        header.addEventListener("click", () => {
+          const content = header.nextElementSibling;
+          const chevron = header.querySelector(".chevron");
+          const isActive = content.classList.toggle("active");
+          chevron.classList.toggle("rotated", isActive);
+        });
+      });
+
+      function updateChart(index) {
+        myChart.data.datasets.forEach((dataset, i) => {
+          dataset.hidden = i !== index;
+          if (i === index) {
+            dataset.borderColor = dataset.pointBorderColor;
+          }
+        });
+        myChart.update();
+
+        const buttons = document.querySelectorAll(".bg-gray-300, .bg-teal-500");
+        buttons.forEach((btn, i) => {
+          if (i === index) {
+            btn.classList.remove("bg-gray-300", "hover:bg-gray-400");
+            btn.classList.add("bg-teal-500", "hover:bg-teal-600");
+          } else {
+            btn.classList.remove("bg-teal-500", "hover:bg-teal-600");
+            btn.classList.add("bg-gray-300", "hover:bg-gray-400");
+          }
+        });
+      }
+
+      window.onload = function () {
+        myChart = new Chart(ctx, config);
+        updateChart(0);
+      };
+    </script>
+  </body>
+</html>

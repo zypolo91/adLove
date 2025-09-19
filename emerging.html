@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>阿尔茨海默病在研药物前沿分析</title>
+    <script src="assets/vendor/tailwindcss.js"></script>
+    <script src="assets/vendor/chart.umd.min.js"></script>
+    <!-- Chosen Palette: Calm Intellect -->
+    <!-- Application Structure Plan: A top-level navigation bar for 'Overview' and each of the five drugs. This tab-like structure provides immediate, non-linear access to specific information, which is more user-friendly than a long-scrolling report. The 'Overview' section acts as a dashboard, offering high-level comparisons (Pipeline Timeline, Mechanism Chart) to orient the user. Each drug-specific section provides a deep dive using a consistent layout (Key Info Cards, MoA, Clinical Data, Analysis) for easy comparison between drugs. This prioritizes user-driven exploration and quick information retrieval over a narrative report format. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: All 5 drugs' development stages. Goal: Compare progress. Viz: HTML/CSS Timeline. Interaction: None needed, purely informational. Justification: Provides an instant, clear visual summary of the competitive landscape. Method: Tailwind CSS Flexbox.
+        - Report Info: All 5 drugs' mechanisms. Goal: Organize & Compare. Viz: Polar Area Chart. Interaction: Hover for tooltips. Justification: A polar area chart visually separates the distinct therapeutic approaches more effectively than a pie chart and is more engaging than a simple list. Library: Chart.js (Canvas).
+        - Report Info: Detailed drug info (target, trials, etc.). Goal: Inform. Viz: Styled Cards and Tables. Interaction: N/A. Justification: Cards provide scannable key data points, while tables structure detailed clinical findings clearly. Method: Tailwind CSS.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+      body {
+        font-family: "Inter", "Helvetica Neue", "Arial", "PingFang SC",
+          "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        background-color: #f8f9fa;
+      }
+      .nav-btn {
+        transition: all 0.3s ease;
+        border-bottom: 2px solid transparent;
+      }
+      .nav-btn.active {
+        border-bottom-color: #047857;
+        color: #047857;
+        font-weight: 600;
+      }
+      .chart-container {
+        position: relative;
+        width: 100%;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+        height: 300px;
+        max-height: 400px;
+      }
+      @media (min-width: 768px) {
+        .chart-container {
+          height: 400px;
+        }
+      }
+      .pipeline {
+        display: flex;
+        padding: 1rem 0;
+        overflow-x: auto;
+      }
+      .pipeline-stage {
+        flex: 1;
+        text-align: center;
+        padding: 0.5rem;
+        position: relative;
+        min-width: 120px;
+      }
+      .pipeline-stage::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        right: -25px;
+        width: 50px;
+        height: 2px;
+        background-color: #d1d5db;
+        transform: translateY(-50%);
+      }
+      .pipeline-stage:last-child::after {
+        display: none;
+      }
+      .pipeline-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: #d1d5db;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 0.5rem;
+        font-weight: bold;
+      }
+      .pipeline-stage.completed .pipeline-icon {
+        background-color: #10b981;
+      }
+      .pipeline-stage.active .pipeline-icon {
+        background-color: #3b82f6;
+      }
+      .drug-marker {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #4b5563;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body class="text-gray-800">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+      <header class="text-center mb-8">
+        <h1 class="text-3xl md:text-4xl font-bold text-emerald-800">
+          阿尔茨海默病在研药物前沿分析
+        </h1>
+        <p class="text-md text-gray-600 mt-2">
+          最新临床进展与前景展望 (截至2025年9月)
+        </p>
+      </header>
+
+      <nav
+        id="nav-bar"
+        class="flex flex-wrap justify-center space-x-2 sm:space-x-4 border-b-2 pb-3 mb-8"
+      >
+        <button
+          data-target="overview"
+          class="nav-btn px-3 py-2 text-sm sm:text-base active"
+        >
+          概览
+        </button>
+        <button
+          data-target="e2814"
+          class="nav-btn px-3 py-2 text-sm sm:text-base"
+        >
+          E2814
+        </button>
+        <button
+          data-target="biib080"
+          class="nav-btn px-3 py-2 text-sm sm:text-base"
+        >
+          BIIB080
+        </button>
+        <button
+          data-target="ar1001"
+          class="nav-btn px-3 py-2 text-sm sm:text-base"
+        >
+          AR1001
+        </button>
+        <button
+          data-target="lmtx"
+          class="nav-btn px-3 py-2 text-sm sm:text-base"
+        >
+          LMTX
+        </button>
+        <button
+          data-target="blarcamesine"
+          class="nav-btn px-3 py-2 text-sm sm:text-base"
+        >
+          Blarcamesine
+        </button>
+      </nav>
+
+      <main id="content-container">
+        <!-- Overview Section -->
+        <div id="content-overview" class="content-section space-y-12">
+          <section>
+            <h2 class="text-2xl font-bold text-emerald-700 mb-4 text-center">
+              在研药物管线概览
+            </h2>
+            <p class="text-center text-gray-600 max-w-3xl mx-auto mb-6">
+              本部分直观展示了五种备受关注的阿尔茨海默病在研药物的临床开发阶段。通过这个时间轴，您可以快速比较各个药物的进展情况，了解它们在从临床前研究到上市审批这一漫长过程中的当前位置。
+            </p>
+            <div
+              class="bg-white p-4 sm:p-6 rounded-lg shadow-md overflow-x-auto"
+            >
+              <div class="pipeline min-w-[700px]">
+                <div class="pipeline-stage completed">
+                  <div class="pipeline-icon">P1</div>
+                  <p>临床I期</p>
+                </div>
+                <div class="pipeline-stage active">
+                  <div class="pipeline-icon">P2</div>
+                  <p>临床II期</p>
+                </div>
+                <div class="pipeline-stage">
+                  <div class="pipeline-icon">P3</div>
+                  <p>临床III期</p>
+                </div>
+                <div class="pipeline-stage">
+                  <div class="pipeline-icon">NDA</div>
+                  <p>注册申请</p>
+                </div>
+                <div class="pipeline-stage">
+                  <div class="pipeline-icon">上市</div>
+                  <p>批准上市</p>
+                </div>
+              </div>
+              <div class="relative h-40 min-w-[700px]">
+                <!-- Drug Markers -->
+                <div class="drug-marker" style="top: 10px; left: 25%">
+                  BIIB080
+                </div>
+                <div
+                  class="drug-marker bg-emerald-600"
+                  style="top: 40px; left: 45%"
+                >
+                  E2814
+                </div>
+                <div
+                  class="drug-marker bg-sky-600"
+                  style="top: 70px; left: 55%"
+                >
+                  AR1001
+                </div>
+                <div
+                  class="drug-marker bg-indigo-600"
+                  style="top: 100px; left: 75%"
+                >
+                  Blarcamesine
+                </div>
+                <div
+                  class="drug-marker bg-rose-600"
+                  style="top: 130px; left: 80%"
+                >
+                  LMTX
+                </div>
+              </div>
+            </div>
+          </section>
+          <section>
+            <h2 class="text-2xl font-bold text-emerald-700 mb-4 text-center">
+              作用机制对比
+            </h2>
+            <p class="text-center text-gray-600 max-w-3xl mx-auto mb-6">
+              阿尔茨海默病的病理机制复杂，因此药物研发也呈现出多样化的策略。下图将这五种药物按照其主要作用靶点和机制进行分类，帮助您理解当前主流的几种治疗思路，包括针对Tau蛋白、神经元保护和功能调节等不同方向。
+            </p>
+            <div class="bg-white p-4 sm:p-6 rounded-lg shadow-md">
+              <div class="chart-container">
+                <canvas id="mechanismChart"></canvas>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Drug Detail Sections -->
+        <div id="content-e2814" class="content-section hidden space-y-8">
+          <header>
+            <h2 class="text-3xl font-bold text-center">E2814 (卫材/Eisai)</h2>
+            <p class="text-center text-lg text-gray-500 mt-1">
+              靶向Tau蛋白的下一代抗体药物
+            </p>
+          </header>
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-center"
+          >
+            <div class="bg-white p-4 rounded-lg shadow">
+              <h3 class="font-bold">靶点</h3>
+              <p>Tau蛋白 (MTBR区)</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+              <h3 class="font-bold">类型</h3>
+              <p>单克隆抗体</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+              <h3 class="font-bold">当前阶段</h3>
+              <p>临床II/III期</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+              <h3 class="font-bold">预计上市</h3>
+              <p>~2028-2029年</p>
+            </div>
+          </div>
+          <div class="bg-white p-6 rounded-lg shadow space-y-4">
+            <h3 class="text-xl font-bold text-emerald-700">
+              药物介绍与作用机制
+            </h3>
+            <p>
+              E2814是卫材研发的一种人源化抗Tau蛋白单克隆抗体，专门靶向Tau蛋白的微管结合区（MTBR）的N端。其核心机制是抑制Tau蛋白“种子”在神经元之间的传播，从而阻止Tau病理（神经纤维缠结）在整个大脑的扩散。这种机制旨在从根本上延缓疾病的进展，而非仅仅清除已形成的蛋白沉积。
+            </p>
+            <h3 class="text-xl font-bold text-emerald-700">
+              临床试验与最新数据
+            </h3>
+            <p>
+              E2814已获得FDA的快速通道资格。目前，它正与卫材/渤健已上市的抗Aβ药物仑卡奈单抗（Lecanemab）联用，在针对临床前阿尔茨海默病（无症状期）的大型研究AHEAD
+              3-45中进行评估。这种“双抗”联合疗法旨在同时清除Aβ斑块和抑制Tau传播，理论上能产生协同增效的作用。
+            </p>
+            <p>
+              在2025年阿尔茨海默病协会国际会议（AAIC）上公布的数据摘要显示，初步分析表明，联合用药组在生物标志物上展现出积极信号。与单用仑卡奈单抗相比，联合用药不仅能有效清除Aβ，还能更显著地降低脑脊液中p-Tau217等Tau病理关键标志物的水平，提示其成功抑制了Tau的早期病理进展。
+            </p>
+            <h3 class="text-xl font-bold text-emerald-700">前景分析</h3>
+            <p>
+              E2814的前景非常光明，它代表了继抗Aβ药物之后最重要的研发方向——抗Tau疗法。通过与已验证有效的仑卡奈单抗联用，直接在疾病最早阶段进行干预，这种“鸡尾酒”疗法被认为是未来AD治疗的标准模式。如果AHEAD
+              3-45研究取得成功，E2814有望成为首个获批用于预防或延缓AD临床症状出现的抗Tau药物，市场潜力巨大。
+            </p>
+          </div>
+        </div>
+
+        <div id="content-biib080" class="content-section hidden space-y-8">
+          <header>
+            <h2 class="text-3xl font-bold text-center">
+              BIIB080 / IONIS-MAPTRx (渤健/Biogen)
+            </h2>
+            <p class="text-center text-lg text-gray-500 mt-1">
+              从源头减少Tau蛋白生成的反义寡核苷酸(ASO)疗法
+            </p>
+          </header>
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-center"
+          >
+            <div class="bg-white p-4 rounded-lg shadow">
+              <h3 class="font-bold">靶点</h3>
+              <p>MAPT基因mRNA</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+              <h3 class="font-bold">类型</h3>
+              <p>反义寡核苷酸(ASO)</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+              <h3 class="font-bold">当前阶段</h3>
+              <p>临床II期 (CELIA研究)</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+              <h3 class="font-bold">预计上市</h3>
+              <p>~2029-2030年</p>
+            </div>
+          </div>
+          <div class="bg-white p-6 rounded-lg shadow space-y-4">
+            <h3 class="text-xl font-bold text-emerald-700">
+              药物介绍与作用机制
+            </h3>
+            <p>
+              BIIB080是一种通过鞘内注射给药的反义寡核苷酸（ASO）药物。它不直接作用于Tau蛋白本身，而是靶向编码Tau蛋白的MAPT基因的信使RNA（mRNA）。通过与mRNA结合并促使其降解，BIIB080能够从基因层面“关闭”Tau蛋白的生产，从而全面降低大脑中各种形式（正常的、病理的）Tau蛋白的总量。这是一种从源头上遏制Tau病理的创新策略。
+            </p>
+            <h3 class="text-xl font-bold text-emerald-700">
+              临床试验与最新数据
+            </h3>
+            <p>
+              BIIB080的I/II期临床研究结果令人鼓舞，数据显示药物具有良好的安全性和耐受性，并且能以剂量依赖的方式，持续、显著地降低脑脊液中总Tau（t-Tau）和磷酸化Tau（p-Tau）的水平，降幅最高超过60%。目前，一项更大规模的II期研究CELIA正在进行中，旨在评估BIIB080在轻度AD患者中的长期疗效和安全性，关键在于验证降低Tau蛋白水平能否转化为临床获益（如延缓认知衰退）。
+            </p>
+            <h3 class="text-xl font-bold text-emerald-700">前景分析</h3>
+            <p>
+              BIIB080作为ASO疗法在AD领域的先驱，其前景充满期待，但也伴随着挑战。优势在于其独特且强大的作用机制，能全面下调Tau蛋白，可能比抗体药物更彻底。挑战则在于给药方式（鞘内注射）相对不便，以及需要证明长期的蛋白抑制对大脑功能是安全且有益的。CELIA研究的结果将是决定其命运的关键，如果成功，将为AD治疗开辟一个全新的技术平台。
+            </p>
+          </div>
+        </div>
+
+        <div id="content-ar1001" class="content-section hidden space-y-8">
+          <header>
+            <h2 class="text-3xl font-bold text-center">AR1001 (AriBio)</h2>
+            <p class="text-center text-lg text-gray-500 mt-1">
+              具备多重作用机制的口服小分子药物
+            </p>
+          </header>
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-center"
+          >
+            <div class="bg-white p-4 rounded-lg shadow">
+              <h3 class="font-bold">靶点</h3>
+              <p>PDE5, Wnt信号通路等</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+              <h3 class="font-bold">类型</h3>
+              <p>口服小分子</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+              <h3 class="font-bold">当前阶段</h3>
+              <p>全球临床III期</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+              <h3 class="font-bold">预计上市</h3>
+              <p>~2028年</p>
+            </div>
+          </div>
+          <div class="bg-white p-6 rounded-lg shadow space-y-4">
+            <h3 class="text-xl font-bold text-emerald-700">
+              药物介绍与作用机制
+            </h3>
+            <p>
+              AR1001是一种口服的磷酸二酯酶-5（PDE5）抑制剂，但其作用远不止于此。研究表明它具有多效性，能够通过抑制神经元凋亡、促进神经发生（新神经元生成）、增强突触可塑性以及改善脑血流等多种途径发挥神经保护作用。与主流的Aβ/Tau靶向药物不同，AR1001旨在修复和保护神经元，改善大脑的整体健康状况。
+            </p>
+            <h3 class="text-xl font-bold text-emerald-700">
+              临床试验与最新数据
+            </h3>
+            <p>
+              该药物已完成一项为期52周的II期临床试验，结果显示，在主要终点认知评估量表（ADAS-Cog
+              13）上，AR1001治疗组展现出改善趋势。基于这些积极信号，目前一项名为POLARIS-AD的全球多中心III期临床试验正在全面展开，招募早期AD患者，旨在进一步验证其疗效和安全性。这项研究的结果将是其能否获批上市的决定性依据。
+            </p>
+            <h3 class="text-xl font-bold text-emerald-700">前景分析</h3>
+            <p>
+              AR1001的吸引力在于其口服的便利性和独特的作用机制。如果成功，它可以为患者提供一种不同于注射型抗体药物的治疗选择，可能与其他药物联用以获得更全面的治疗效果。作为一种非Aβ/Tau靶点的药物，它的成功将证明AD治疗策略的多样化是可行的。然而，小分子药物在AD领域的III期试验失败率较高，AR1001仍需通过大规模试验证明其临床价值。
+            </p>
+          </div>
+        </div>
+
+        <div id="content-lmtx" class="content-section hidden space-y-8">
+          <header>
+            <h2 class="text-3xl font-bold text-center">
+              LMTX / Hydromethylthionine (TauRx)
+            </h2>
+            <p class="text-center text-lg text-gray-500 mt-1">
+              旨在阻止Tau蛋白聚集的口服抑制剂
+            </p>
+          </header>
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-center"
+          >
+            <div class="bg-white p-4 rounded-lg shadow">
+              <h3 class="font-bold">靶点</h3>
+              <p>Tau蛋白聚集</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+              <h3 class="font-bold">类型</h3>
+              <p>口服Tau聚集抑制剂</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+              <h3 class="font-bold">当前阶段</h3>
+              <p>已提交上市申请(英/欧)</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+              <h3 class="font-bold">预计上市</h3>
+              <p>~2026年 (区域性)</p>
+            </div>
+          </div>
+          <div class="bg-white p-6 rounded-lg shadow space-y-4">
+            <h3 class="text-xl font-bold text-emerald-700">
+              药物介绍与作用机制
+            </h3>
+            <p>
+              LMTX是TauRx制药公司研发的一种口服Tau蛋白聚集抑制剂。其活性成分是亚甲蓝的稳定、纯化形式。它的核心作用机制是直接干预Tau蛋白，阻止其自身聚集成寡聚体和神经纤维缠结，并可能有助于解聚已形成的缠结。通过这种方式，LMTX旨在阻止Tau病理的级联反应，保护神经元免受毒性Tau蛋白的损害。
+            </p>
+            <h3 class="text-xl font-bold text-emerald-700">
+              临床试验与最新数据
+            </h3>
+            <p>
+              LMTX的研发历程漫长且充满争议。其关键的III期研究LUCIDITY的数据分析较为复杂。尽管在总人群中未能达到主要终点，但事后分析显示，在早期AD患者和血液药物浓度达标的患者亚组中，LMTX展现出显著的延缓认知和功能衰退的效果。此外，影像学数据显示，与匹配的外部对照组相比，LMTX治疗组的脑萎缩速度显著减缓。基于这些数据，TauRx已向英国和欧洲的药品监管机构提交了上市申请。
+            </p>
+            <h3 class="text-xl font-bold text-emerald-700">前景分析</h3>
+            <p>
+              LMTX是第一款走到上市申请阶段的口服抗Tau药物，这本身就是一个重要的里程碑。其前景具有两面性：一方面，如果获批，它将为患者提供一种方便的口服治疗选择，其针对脑萎缩的积极数据也极具吸引力。另一方面，其复杂的临床数据和依赖于亚组分析的结果，可能会让监管机构（尤其是FDA）持谨慎态度。它的审批结果将对后续的Tau靶向药物研发产生重要影响。
+            </p>
+          </div>
+        </div>
+
+        <div id="content-blarcamesine" class="content-section hidden space-y-8">
+          <header>
+            <h2 class="text-3xl font-bold text-center">
+              Blarcamesine / ANAVEX®2-73 (Anavex)
+            </h2>
+            <p class="text-center text-lg text-gray-500 mt-1">
+              通过激活Sigma-1受体调节神经元稳态
+            </p>
+          </header>
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-center"
+          >
+            <div class="bg-white p-4 rounded-lg shadow">
+              <h3 class="font-bold">靶点</h3>
+              <p>Sigma-1受体 (S1R)</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+              <h3 class="font-bold">类型</h3>
+              <p>口服小分子激动剂</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+              <h3 class="font-bold">当前阶段</h3>
+              <p>准备提交上市申请</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+              <h3 class="font-bold">预计上市</h3>
+              <p>~2027年</p>
+            </div>
+          </div>
+          <div class="bg-white p-6 rounded-lg shadow space-y-4">
+            <h3 class="text-xl font-bold text-emerald-700">
+              药物介绍与作用机制
+            </h3>
+            <p>
+              Blarcamesine是一种新型的口服小分子药物，其独特之处在于它能激活Sigma-1受体（S1R）。S1R是一种位于细胞内质网的特殊伴侣蛋白，被认为是细胞应激反应的主调节器。通过激活S1R，Blarcamesine能够帮助恢复神经元的内部稳态，减轻线粒体功能障碍、氧化应激和蛋白质错误折叠等病理过程，从而起到神经保护作用，并可能改善认知功能。
+            </p>
+            <h3 class="text-xl font-bold text-emerald-700">
+              临床试验与最新数据
+            </h3>
+            <p>
+              该药物已完成一项关键的IIb/III期临床试验（AVATAR），研究对象为早期AD患者。Anavex公司公布的顶线数据显示，该研究达到了共同主要终点和关键次要终点，在认知（ADAS-Cog）和日常生活能力（ADCS-ADL）两个维度上均显示出对疾病进展的显著延缓作用。此外，携带SIGMAR1基因变异的患者似乎对治疗的反应更好，这为精准医疗提供了可能。
+            </p>
+            <h3 class="text-xl font-bold text-emerald-700">前景分析</h3>
+            <p>
+              Blarcamesine代表了AD药物研发中一个令人兴奋的新方向，即通过调节细胞自身的防御和修复机制来对抗疾病。其积极的III期临床数据和口服给药的便利性是其主要优势。公司正在积极准备向FDA提交新药上市申请（NDA）。如果获批，它将成为首个S1R激动剂类AD药物，为患者提供一种与Aβ/Tau靶点完全不同的治疗新选择，尤其可能对特定基因型的患者更为有效。
+            </p>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const drugData = {
+        mechanisms: {
+          labels: [
+            "抗Tau抗体 (E2814)",
+            "抗Tau ASO (BIIB080)",
+            "Tau聚集抑制剂 (LMTX)",
+            "神经保护/再生 (AR1001)",
+            "Sigma-1受体激动剂 (Blarcamesine)",
+          ],
+          data: [1, 1, 1, 1, 1],
+        },
+      };
+
+      let mechanismChartInstance = null;
+
+      function updateContent(targetId) {
+        document.querySelectorAll(".content-section").forEach((section) => {
+          section.classList.add("hidden");
+        });
+        const targetElement = document.getElementById(`content-${targetId}`);
+        if (targetElement) {
+          targetElement.classList.remove("hidden");
+        }
+
+        document.querySelectorAll(".nav-btn").forEach((btn) => {
+          btn.classList.remove("active");
+        });
+        const activeButton = document.querySelector(
+          `.nav-btn[data-target="${targetId}"]`
+        );
+        if (activeButton) {
+          activeButton.classList.add("active");
+        }
+
+        if (targetId === "overview") {
+          renderMechanismChart();
+        }
+      }
+
+      function renderMechanismChart() {
+        const ctx = document.getElementById("mechanismChart");
+        if (!ctx) return;
+
+        if (mechanismChartInstance) {
+          mechanismChartInstance.destroy();
+        }
+
+        mechanismChartInstance = new Chart(ctx.getContext("2d"), {
+          type: "polarArea",
+          data: {
+            labels: drugData.mechanisms.labels.map(
+              (label) => label.split(" (")[0]
+            ),
+            datasets: [
+              {
+                label: "作用机制",
+                data: drugData.mechanisms.data,
+                backgroundColor: [
+                  "rgba(16, 185, 129, 0.7)",
+                  "rgba(59, 130, 246, 0.7)",
+                  "rgba(219, 39, 119, 0.7)",
+                  "rgba(14, 165, 233, 0.7)",
+                  "rgba(139, 92, 246, 0.7)",
+                ],
+                borderColor: [
+                  "rgb(16, 185, 129)",
+                  "rgb(59, 130, 246)",
+                  "rgb(219, 39, 119)",
+                  "rgb(14, 165, 233)",
+                  "rgb(139, 92, 246)",
+                ],
+                borderWidth: 1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              r: {
+                display: false,
+              },
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    size: 12,
+                  },
+                  boxWidth: 20,
+                },
+              },
+              tooltip: {
+                callbacks: {
+                  label: function (context) {
+                    return drugData.mechanisms.labels[context.dataIndex];
+                  },
+                },
+              },
+            },
+          },
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const navBar = document.getElementById("nav-bar");
+        navBar.addEventListener("click", (e) => {
+          if (e.target.matches(".nav-btn")) {
+            const targetId = e.target.getAttribute("data-target");
+            updateContent(targetId);
+          }
+        });
+
+        updateContent("overview");
+      });
+    </script>
+  </body>
+</html>
