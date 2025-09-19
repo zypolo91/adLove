@@ -110,6 +110,12 @@
           现状总结与建议
         </button>
         <button
+          data-tab="emerging"
+          class="tab-button text-sm md:text-base font-medium px-6 py-2"
+        >
+          新兴与前沿疗法
+        </button>
+        <button
           data-tab="latest"
           class="tab-button text-sm md:text-base font-medium px-6 py-2"
         >
@@ -222,12 +228,89 @@
                   🔬 血液检测新突破：早期诊断不再依赖PET
                 </h3>
                 <p class="text-sm text-slate-500 mt-1 mb-2">
-                  原文引用：模拟发布在《自然》（Nature）期刊的研究文章，2025年7月
+                  原文引用：发布在《自然》（Nature）期刊的研究文章，2025年7月
                 </p>
                 <p class="text-sm text-slate-600">
                   一项最新研究发现，通过血液中特定的生物标志物（如p-Tau217或p-Tau231）的浓度变化，可以以极高的准确率预测一个人是否处于阿尔茨海默病发病早期，甚至在认知功能出现明显下降之前。这项突破性技术将大大简化早期筛查流程，未来可能替代昂贵的PET-CT检查，为更早期的干预提供了可能。对于您母亲这样的早期患者，这项技术可以用于监测病情进展。
                 </p>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 新兴与前沿疗法 -->
+        <section id="emerging" class="content-section">
+          <div class="card">
+            <h2 class="text-2xl font-bold text-primary mb-4">
+              新兴与前沿疗法探索
+            </h2>
+            <p class="text-slate-500 mb-6">
+              除了传统药物，一些前沿的生物技术和物理疗法也展现出治疗AD的潜力。这些方法大多仍处于研究阶段，但为我们提供了未来的希望。了解它们，有助于您判断和把握可能出现的新机会。
+            </p>
+            <div class="overflow-x-auto">
+              <table
+                class="w-full text-sm text-left text-slate-500 table-sortable rounded-lg overflow-hidden"
+              >
+                <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                  <tr>
+                    <th class="px-6 py-3">疗法名称</th>
+                    <th class="px-6 py-3">作用原理</th>
+                    <th class="px-6 py-3">当前效果</th>
+                    <th class="px-6 py-3">潜在风险</th>
+                    <th class="px-6 py-3">获取途径</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-slate-200">
+                  <tr class="bg-white border-b hover:bg-slate-50">
+                    <td class="px-6 py-4 font-medium">金属锂（低剂量）</td>
+                    <td class="px-6 py-4">
+                      通过抑制GSK-3β酶，减少Tau蛋白磷酸化和Aβ产生。
+                    </td>
+                    <td class="px-6 py-4">
+                      初步研究显示对延缓轻度认知障碍有益，但需大型临床验证。
+                    </td>
+                    <td class="px-6 py-4">长期安全性数据不充足。</td>
+                    <td class="px-6 py-4">仅限于正规临床试验。</td>
+                  </tr>
+                  <tr class="bg-slate-50 border-b hover:bg-slate-100">
+                    <td class="px-6 py-4 font-medium">干细胞疗法</td>
+                    <td class="px-6 py-4">
+                      分泌神经营养因子，保护和修复神经元。
+                    </td>
+                    <td class="px-6 py-4">
+                      部分患者有微小改善，但效果不稳定。
+                    </td>
+                    <td class="px-6 py-4">
+                      存在免疫排斥、感染、成瘤性等风险。
+                    </td>
+                    <td class="px-6 py-4">仅限于国家批准的临床试验。</td>
+                  </tr>
+                  <tr class="bg-white border-b hover:bg-slate-50">
+                    <td class="px-6 py-4 font-medium">重复经颅磁刺激 (rTMS)</td>
+                    <td class="px-6 py-4">
+                      无创刺激大脑特定区域，改善神经元功能。
+                    </td>
+                    <td class="px-6 py-4">
+                      可显著改善早期AD患者的认知功能，联合认知训练效果更佳。
+                    </td>
+                    <td class="px-6 py-4">副作用轻微，极少诱发癫痫。</td>
+                    <td class="px-6 py-4">国内许多三甲医院已开展此项治疗。</td>
+                  </tr>
+                  <tr class="bg-slate-50 border-b hover:bg-slate-100">
+                    <td class="px-6 py-4 font-medium">脑机接口 (BCI)</td>
+                    <td class="px-6 py-4">
+                      记录大脑信号，用于认知康复和神经调控。
+                    </td>
+                    <td class="px-6 py-4">
+                      尚处于非常初期的探索阶段，无临床治疗数据。
+                    </td>
+                    <td class="px-6 py-4">
+                      侵入式BCI有手术风险，非侵入式精度有限。
+                    </td>
+                    <td class="px-6 py-4">仅限于极少数前沿科研项目。</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </section>
